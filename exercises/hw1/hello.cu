@@ -1,13 +1,19 @@
 #include <stdio.h>
 
+// #include "cuda_runtime.h"
+// #include "thrust/host_vector.h"
+// #include "thrust/device_vector.h"
+
 __global__ void hello(){
 
-  printf("Hello from block: %u, thread: %u\n", FIXME);
+  auto block = blockIdx.x;
+  auto thread = threadIdx.x;
+  printf("Hello from block: %u, thread: %u\n", block, thread);
 }
 
 int main(){
 
-  hello<<<FIXME>>>();
+  hello<<<2, 3>>>();
   cudaDeviceSynchronize();
 }
 
