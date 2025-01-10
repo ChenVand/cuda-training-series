@@ -22,7 +22,10 @@ __global__ void vadd(const float *A, const float *B, float *C, int ds){
     C[idx] = A[idx] + B[idx];         // do the vector (element) add here
 }
 
-int main(){
+int main(int argc,char *argv[]){
+
+  int blocks = (argc >1) ? atoi(argv[1]) : 32;   // image nx
+	int threads =(argc >2) ? atoi(argv[2]) : 32;    // image ny
 
   float *h_A, *h_B, *h_C, *d_A, *d_B, *d_C;
   h_A = new float[DSIZE];  // allocate space for vectors in host memory
@@ -42,8 +45,6 @@ int main(){
   cudaMemcpy(d_B, h_B, DSIZE*sizeof(float), cudaMemcpyHostToDevice);
   cudaCheckErrors("cudaMemcpy H2D failure");
   //cuda processing sequence step 1 is complete
-  int blocks = 1;  // modify this line for experimentation
-  int threads = 1; // modify this line for experimentation
   vadd<<<blocks, threads>>>(d_A, d_B, d_C, DSIZE);
   cudaCheckErrors("kernel launch failure");
   //cuda processing sequence step 2 is complete
