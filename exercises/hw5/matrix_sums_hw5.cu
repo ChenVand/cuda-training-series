@@ -33,7 +33,7 @@ __global__ void row_sums(const float *A, float *sums, size_t ds){
       else val = 0;
       for (int offset = warpSize/2; offset > 0; offset >>= 1) 
          val += __shfl_down_sync(mask, val, offset);
-      if  (lane == 0) atomicAdd(sums[row], val);
+      if  (lane == 0) atomicAdd(&sums[row], val);
     }
   }
 }
