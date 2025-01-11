@@ -30,7 +30,6 @@ __global__ void row_sums(const float *A, float *sums, size_t ds){
 
 __global__ void row_sums_new(const float *A, float *sums, size_t ds){
 
-  __shared__ float sum;
   int tid = threadIdx.x;
   int lane = tid % warpSize;
   unsigned mask = 0xFFFFFFFFU;
@@ -38,9 +37,6 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
   size_t row;
   size_t col;
   for (size_t row_batch = 0; row_batch < DSIZE; row_batch+=gridDim.x){
-    __syncthreads();
-    if (blockIdx.x==0 && tid==0) sum = 0;
-    __syncthreads();
     row = row_batch + blockIdx.x;
     if (row >= DSIZE) return;
     for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
@@ -53,9 +49,8 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
       for (int offset = warpSize/2; offset > 0; offset >>= 1) 
          val += __shfl_down_sync(mask, val, offset);
 
-      if  (lane == 0) atomicAdd(&sum, val);
+      if  (lane == 0) atomicAdd(&sums[row], val);
     }
-    sums[row] = sum;
   }
 }
 
