@@ -43,9 +43,10 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
       col = col_batch + tid;
       if (col < DSIZE)
         val = A[row*DSIZE + col_batch + tid];
-      else if (col < DSIZE + warpSize - DSIZE%warpSize) val = 0;
-      else continue;
-      __syncwarp();
+        else val = 0;
+      // else if (col < DSIZE + warpSize - DSIZE%warpSize) val = 0;
+      // else continue;
+      // __syncwarp();
       for (int offset = warpSize/2; offset > 0; offset >>= 1) 
          val += __shfl_down_sync(mask, val, offset);
 
