@@ -32,12 +32,12 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
 
   __shared__ float sum;
   int tid = threadIdx.x;
-  if (blockIdx.x==0 && tid==0) sum = 0;
   int lane = tid % warpSize;
   unsigned mask = 0xFFFFFFFFU;
   float val;
   size_t row;
   for (size_t row_batch = 0; row_batch < DSIZE; row_batch+=gridDim.x){
+    if (blockIdx.x==0 && tid==0) sum = 0;
     row = row_batch + blockIdx.x;
     if (row >= DSIZE) return;
     for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
