@@ -30,7 +30,10 @@ __global__ void row_sums(const float *A, float *sums, size_t ds){
 
 __global__ void row_sums_new(const float *A, float *sums, size_t ds){
 
-  int lane = threadIdx.x % warpSize;
+  __shared__ float partial_sum[32];
+  int tid = threadIdx.x;
+  int lane = tid % warpSize;
+  int warpID = tid / warpSize;
   unsigned mask = 0xFFFFFFFFU;
   float val;
   size_t row;
@@ -38,12 +41,24 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
     row = row_batch + blockIdx.x;
     if (row >= DSIZE) return;
     for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
-      if (col_batch + threadIdx.x < DSIZE)
-        val = A[row*DSIZE + col_batch + threadIdx.x];
+      if (col_batch + tid < DSIZE)
+        val = A[row*DSIZE + col_batch + tid];
       else val = 0;
+
       for (int offset = warpSize/2; offset > 0; offset >>= 1) 
          val += __shfl_down_sync(mask, val, offset);
-      if  (lane == 0) atomicAdd(&sums[row], val);
+
+      // if  (lane == 0) atomicAdd(&partial_sum[warpID], val);
+      if  (lane == 0) partial_sum[warpID] += val;
+    }
+
+    __syncthreads();
+    if (warpID==0){
+      val = partial_sum[tid];
+      for (int offset = warpSize/2; offset > 0; offset >>= 1) 
+         val += __shfl_down_sync(mask, val, offset);
+
+      if  (tid == 0) atomicAdd(&sums[row], val);
     }
   }
 }
