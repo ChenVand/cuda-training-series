@@ -60,6 +60,7 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
          val += __shfl_down_sync(mask, val, offset);
 
       if  (tid == 0) atomicAdd(&sums[row], val);
+      // if  (tid == 0) sums[row] = val;
     }
   }
 }
@@ -103,6 +104,7 @@ int main(){
   if (!validate(h_sums, DSIZE)) return -1; 
   printf("row sums correct!\n");
   cudaMemset(d_sums, 0, DSIZE*sizeof(float));
+  memset(h_sums, 0, DSIZE*sizeof(float));
 
   row_sums_new<<<(DSIZE+block_size-1)/block_size, block_size>>>(d_A, d_sums, DSIZE);
   cudaCheckErrors("kernel launch failure");
