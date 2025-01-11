@@ -34,11 +34,11 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
   int tid = threadIdx.x;
   int lane = tid % warpSize;
   int warpID = tid / warpSize;
-  if (tid < 32) partial_sum[tid]=0.0f;
   unsigned mask = 0xFFFFFFFFU;
   float val;
   size_t row;
   for (size_t row_batch = 0; row_batch < DSIZE; row_batch+=gridDim.x){
+    if (tid < 32) partial_sum[tid]=0.0f; //A little out of place but should be in this loop
     row = row_batch + blockIdx.x;
     if (row >= DSIZE) return;
     for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
