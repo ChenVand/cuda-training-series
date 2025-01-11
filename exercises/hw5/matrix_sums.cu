@@ -19,13 +19,26 @@ const int block_size = 256;  // CUDA maximum is 1024
 // matrix row-sum kernel
 __global__ void row_sums(const float *A, float *sums, size_t ds){
 
-  int idx = threadIdx.x+blockDim.x*blockIdx.x; // create typical 1D thread index from built-in variables
-  if (idx < ds){
-    float sum = 0.0f;
-    for (size_t i = 0; i < ds; i++)
-      sum += A[idx*ds+i];         // write a for loop that will cause the thread to iterate across a row, keeeping a running sum, and write the result to sums
-    sums[idx] = sum;
-}}
+  __shared__ float partial_sum = 0;
+  int idx = threadIdx.x+blockDim.x*blockIdx.x;
+  int lane = threadIdx.x % warpSize;
+  unsigned mask = 0xFFFFFFFFU;
+  float val;
+  size_t row;
+  for (size_t row_batch = 0; row_batch < DSIZE; row_batch+=gridDim.x){
+    row = row_batch + blockIdx.x;
+    if (row >= DSIZE) return;
+    for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
+      if (col_batch + threadIdx.x < DSIZE)
+        val = A[row*DSIZE + col_batch + threadIdx.x];
+      else val = 0;
+      for (int offset = warpSize/2; offset > 0; offset >>= 1) 
+         val += __shfl_down_sync(mask, val, offset);
+      if  (lane == 0) atomicAdd(sums[row], val);
+    }
+  }
+}
+
 // matrix column-sum kernel
 __global__ void column_sums(const float *A, float *sums, size_t ds){
 
