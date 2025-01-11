@@ -36,6 +36,7 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
   unsigned mask = 0xFFFFFFFFU;
   float val;
   size_t row;
+  size_t col;
   for (size_t row_batch = 0; row_batch < DSIZE; row_batch+=gridDim.x){
     __syncthreads();
     if (blockIdx.x==0 && tid==0) sum = 0;
@@ -43,10 +44,12 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
     row = row_batch + blockIdx.x;
     if (row >= DSIZE) return;
     for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
-      if (col_batch + tid < DSIZE)
+      col = col_batch + tid;
+      if (col < DSIZE)
         val = A[row*DSIZE + col_batch + tid];
-      else val = 0;
-
+      else if (col < DSIZE + warpSize - DSIZE%warpSize) val = 0;
+      else continue;
+      __syncwarp();
       for (int offset = warpSize/2; offset > 0; offset >>= 1) 
          val += __shfl_down_sync(mask, val, offset);
 
