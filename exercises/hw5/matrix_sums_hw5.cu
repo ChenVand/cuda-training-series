@@ -34,6 +34,7 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
   int tid = threadIdx.x;
   int lane = tid % warpSize;
   int warpID = tid / warpSize;
+  if (lane==0) partial_sum[warpID]=0.0f;
   unsigned mask = 0xFFFFFFFFU;
   float val;
   size_t row;
@@ -48,8 +49,8 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
       for (int offset = warpSize/2; offset > 0; offset >>= 1) 
          val += __shfl_down_sync(mask, val, offset);
 
-      if  (lane == 0) atomicAdd(&partial_sum[warpID], val);
-      // if  (lane == 0) partial_sum[warpID] += val;
+      // if  (lane == 0) atomicAdd(&partial_sum[warpID], val);
+      if  (lane == 0) partial_sum[warpID] += val;
     }
 
     __syncthreads();
