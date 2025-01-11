@@ -34,7 +34,7 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
   int tid = threadIdx.x;
   int lane = tid % warpSize;
   int warpID = tid / warpSize;
-  if (lane==0) partial_sum[warpID]=0.0f;
+  if (tid < 32) partial_sum[tid]=0.0f;
   unsigned mask = 0xFFFFFFFFU;
   float val;
   size_t row;
