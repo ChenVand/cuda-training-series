@@ -19,7 +19,6 @@ const int block_size = 256;  // CUDA maximum is 1024
 // matrix row-sum kernel
 __global__ void row_sums(const float *A, float *sums, size_t ds){
 
-  __shared__ float partial_sum = 0;
   int idx = threadIdx.x+blockDim.x*blockIdx.x;
   int lane = threadIdx.x % warpSize;
   unsigned mask = 0xFFFFFFFFU;
