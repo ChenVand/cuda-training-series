@@ -37,7 +37,9 @@ __global__ void row_sums_new(const float *A, float *sums, size_t ds){
   float val;
   size_t row;
   for (size_t row_batch = 0; row_batch < DSIZE; row_batch+=gridDim.x){
+    __syncthreads();
     if (blockIdx.x==0 && tid==0) sum = 0;
+    __syncthreads();
     row = row_batch + blockIdx.x;
     if (row >= DSIZE) return;
     for (size_t col_batch = 0; col_batch < DSIZE; col_batch+=blockDim.x){
@@ -64,6 +66,7 @@ __global__ void column_sums(const float *A, float *sums, size_t ds){
       sum += A[idx+ds*i];         // write a for loop that will cause the thread to iterate down a column, keeeping a running sum, and write the result to sums
     sums[idx] = sum;
 }}
+
 bool validate(float *data, size_t sz){
   for (size_t i = 0; i < sz; i++)
     if (data[i] != (float)sz) {printf("results mismatch at %lu, was: %f, should be: %f\n", i, data[i], (float)sz); return false;}
